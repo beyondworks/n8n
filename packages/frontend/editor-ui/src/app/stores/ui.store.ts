@@ -36,6 +36,7 @@ import {
 	WORKFLOW_HISTORY_PUBLISH_MODAL_KEY,
 	WORKFLOW_HISTORY_VERSION_UNPUBLISH,
 	CREDENTIAL_RESOLVER_EDIT_MODAL_KEY,
+	LOCAL_STORAGE_LOCALE,
 } from '@/app/constants';
 import {
 	ANNOTATION_TAGS_MANAGER_MODAL_KEY,
@@ -93,14 +94,24 @@ import type { ProjectSharingData } from '@/features/collaboration/projects/proje
 import identity from 'lodash/identity';
 import * as modalRegistry from '@/app/moduleInitializer/modalRegistry';
 import { useTelemetry } from '@/app/composables/useTelemetry';
+import { setLanguage } from '@n8n/i18n';
 
 let savedTheme: ThemeOption = 'system';
+let savedLocale = 'en';
 
 try {
 	const value = getThemeOverride();
 	if (value !== null) {
 		savedTheme = value;
 		applyThemeToBody(value);
+	}
+} catch (e) {}
+
+try {
+	const value = localStorage.getItem(LOCAL_STORAGE_LOCALE);
+	if (value) {
+		savedLocale = JSON.parse(value);
+		setLanguage(savedLocale);
 	}
 } catch (e) {}
 
@@ -117,6 +128,7 @@ export const useUIStore = defineStore(STORES.UI, () => {
 			write: identity,
 		},
 	});
+	const locale = useLocalStorage<string>(LOCAL_STORAGE_LOCALE, savedLocale);
 	const modalsById = ref<Record<string, ModalState>>({
 		...Object.fromEntries(
 			[
@@ -447,6 +459,11 @@ export const useUIStore = defineStore(STORES.UI, () => {
 		applyThemeToBody(newTheme);
 	};
 
+	const setLocale = (newLocale: string): void => {
+		locale.value = newLocale;
+		setLanguage(newLocale);
+	};
+
 	const setMode = (name: keyof Modals, mode: string): void => {
 		modalsById.value[name] = {
 			...modalsById.value[name],
@@ -679,6 +696,7 @@ export const useUIStore = defineStore(STORES.UI, () => {
 		addFirstStepOnLoad,
 		sidebarMenuCollapsed,
 		theme: computed(() => theme.value),
+		locale: computed(() => locale.value),
 		modalsById,
 		currentView,
 		isAnyModalOpen,
@@ -686,6 +704,7 @@ export const useUIStore = defineStore(STORES.UI, () => {
 		activeModals,
 		isProcessingExecutionResults,
 		setTheme,
+		setLocale,
 		setModalData,
 		openModalWithData,
 		openModal,

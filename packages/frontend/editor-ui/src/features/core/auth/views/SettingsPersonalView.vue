@@ -81,6 +81,18 @@ const themeOptions = ref<Array<{ name: ThemeOption; label: BaseTextKey }>>([
 	},
 ]);
 
+const currentSelectedLocale = ref(useUIStore().locale);
+const localeOptions = ref<Array<{ name: string; label: string }>>([
+	{
+		name: 'en',
+		label: 'English',
+	},
+	{
+		name: 'ko',
+		label: '한국어 (Korean)',
+	},
+]);
+
 const uiStore = useUIStore();
 const usersStore = useUsersStore();
 const settingsStore = useSettingsStore();
@@ -115,7 +127,9 @@ const isMfaFeatureEnabled = computed((): boolean => {
 });
 
 const hasAnyPersonalisationChanges = computed((): boolean => {
-	return currentSelectedTheme.value !== uiStore.theme;
+	return (
+		currentSelectedTheme.value !== uiStore.theme || currentSelectedLocale.value !== uiStore.locale
+	);
 });
 
 const hasAnyChanges = computed(() => {
@@ -279,6 +293,7 @@ async function updatePersonalisationSettings() {
 	}
 
 	uiStore.setTheme(currentSelectedTheme.value);
+	uiStore.setLocale(currentSelectedLocale.value);
 }
 
 function onSaveClick() {
@@ -452,7 +467,27 @@ onBeforeUnmount(() => {
 					</N8nSelect>
 				</N8nInputLabel>
 			</div>
+			<div class="mt-s">
+				<N8nInputLabel label="Language">
+					<N8nSelect
+						v-model="currentSelectedLocale"
+						:class="$style.themeSelect"
+						data-test-id="locale-select"
+						size="small"
+						filterable
+					>
+						<N8nOption
+							v-for="item in localeOptions"
+							:key="item.name"
+							:label="item.label"
+							:value="item.name"
+						>
+						</N8nOption>
+					</N8nSelect>
+				</N8nInputLabel>
+			</div>
 		</div>
+
 		<div>
 			<N8nButton
 				float="right"
