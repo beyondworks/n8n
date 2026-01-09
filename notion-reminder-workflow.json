@@ -1,0 +1,129 @@
+{
+    "name": "노션 마감일 리마인더 (이메일)",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "cronExpression",
+                            "expression": "0 9 * * *"
+                        }
+                    ]
+                }
+            },
+            "id": "1c467417-a3ed-4d7f-a152-6877729e8a41",
+            "name": "매일 오전 9시",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                340,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "resource": "databasePage",
+                "operation": "getAll",
+                "databaseId": {
+                    "__rl": true,
+                    "value": "242003c7-f7be-804a-9d6e-f76d5d0347b4",
+                    "mode": "list",
+                    "cachedResultName": "Beyond_Tasks",
+                    "cachedResultUrl": "https://www.notion.so/242003c7f7be804a9d6ef76d5d0347b4"
+                },
+                "returnAll": true,
+                "filterType": "manual",
+                "options": {}
+            },
+            "id": "2df9298c-8b6f-4cdf-b818-750d1321b761",
+            "name": "노션 DB 조회",
+            "type": "n8n-nodes-base.notion",
+            "typeVersion": 2.2,
+            "position": [
+                560,
+                300
+            ],
+            "credentials": {
+                "notionApi": {
+                    "id": "xw5kbbLStDNvEvBq",
+                    "name": "Notion account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// 오늘 날짜 (시간 제외)\nconst today = new Date();\ntoday.setHours(0, 0, 0, 0);\n\nconst overdueItems = [];\n\nfor (const item of $input.all()) {\n  const data = item.json;\n  \n  // Completed 체크박스 확인\n  const isCompleted = data.property_completed === true;\n  \n  // 이미 완료된 항목은 스킵\n  if (isCompleted) continue;\n  \n  // 날짜 필드 확인\n  const dueDateField = data.property_date;\n  \n  if (dueDateField && dueDateField.start) {\n    // 종료일이 있으면 종료일을 마감일로 사용, 없으면 시작일 사용\n    const deadlineStr = dueDateField.end || dueDateField.start;\n    const deadline = new Date(deadlineStr);\n    deadline.setHours(0, 0, 0, 0);\n    \n    // 마감일이 오늘 이전인지 확인 (오늘도 포함하려면 <= 사용)\n    if (deadline < today) {\n      const title = data.name || '제목 없음';\n      const daysPast = Math.floor((today - deadline) / (1000 * 60 * 60 * 24));\n      \n      overdueItems.push({\n        title: title,\n        dueDate: deadlineStr,\n        daysPast: daysPast,\n        url: data.url,\n        status: data.property_status || ''\n      });\n    }\n  }\n}\n\nif (overdueItems.length === 0) {\n  return [];\n}\n\noverdueItems.sort((a, b) => b.daysPast - a.daysPast);\n\nlet htmlMessage = `<h2>⏰ 마감일 지난 할일 알림</h2>`;\nhtmlMessage += `<p>📋 총 <strong>${overdueItems.length}개</strong> 항목이 마감일을 초과했습니다.</p>`;\nhtmlMessage += `<table style=\"border-collapse: collapse; width: 100%;\">`;\nhtmlMessage += `<tr style=\"background: #f5f5f5;\"><th style=\"padding: 10px; border: 1px solid #ddd;\">항목</th><th style=\"padding: 10px; border: 1px solid #ddd;\">마감일</th><th style=\"padding: 10px; border: 1px solid #ddd;\">초과일</th><th style=\"padding: 10px; border: 1px solid #ddd;\">상태</th></tr>`;\n\noverdueItems.forEach((item) => {\n  htmlMessage += `<tr>`;\n  htmlMessage += `<td style=\"padding: 10px; border: 1px solid #ddd;\"><a href=\"${item.url}\">${item.title}</a></td>`;\n  htmlMessage += `<td style=\"padding: 10px; border: 1px solid #ddd;\">${item.dueDate}</td>`;\n  htmlMessage += `<td style=\"padding: 10px; border: 1px solid #ddd; color: red;\">⚠️ ${item.daysPast}일</td>`;\n  htmlMessage += `<td style=\"padding: 10px; border: 1px solid #ddd;\">${item.status}</td>`;\n  htmlMessage += `</tr>`;\n});\n\nhtmlMessage += `</table>`;\nhtmlMessage += `<p style=\"color: #888; margin-top: 20px;\">📆 확인 시간: ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</p>`;\n\nreturn [{ \n  json: { \n    subject: `⏰ 마감 초과 알림: ${overdueItems.length}개 항목`,\n    htmlMessage: htmlMessage,\n    count: overdueItems.length, \n    items: overdueItems \n  } \n}];"
+            },
+            "id": "02786d0e-7f22-4423-a3dd-dab2afb75f78",
+            "name": "마감일 체크 및 메시지 생성",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                780,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "sendTo": "beyondworks.br@gmail.com",
+                "subject": "={{ $json.subject }}",
+                "emailType": "html",
+                "message": "={{ $json.htmlMessage }}",
+                "options": {}
+            },
+            "id": "gmail-send-node-001",
+            "name": "Gmail 이메일 발송",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                1000,
+                300
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "W7t4afVVAIjdOHwo",
+                    "name": "Gmail account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "매일 오전 9시": {
+            "main": [
+                [
+                    {
+                        "node": "노션 DB 조회",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "노션 DB 조회": {
+            "main": [
+                [
+                    {
+                        "node": "마감일 체크 및 메시지 생성",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "마감일 체크 및 메시지 생성": {
+            "main": [
+                [
+                    {
+                        "node": "Gmail 이메일 발송",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    }
+}

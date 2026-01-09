@@ -25,6 +25,7 @@ import {
 	removePreviewToken,
 	shouldShowCommunityNodeDetails,
 } from '../../nodeCreator.utils';
+import koGuide from '@/constants/ko_easy_guide.json';
 
 import { N8nIcon, N8nNodeCreatorNode, N8nTooltip } from '@n8n/design-system';
 export interface Props {
@@ -138,6 +139,12 @@ const tag = computed(() => {
 	return undefined;
 });
 
+const easyGuideDescription = computed(() => {
+	// @ts-ignore
+	const guide = koGuide.nodes[props.nodeType.name];
+	return guide ? `[가이드] ${guide}` : undefined;
+});
+
 function onDragStart(event: DragEvent): void {
 	if (event.dataTransfer) {
 		event.dataTransfer.effectAllowed = 'copy';
@@ -168,78 +175,83 @@ function onCommunityNodeTooltipClick(event: MouseEvent) {
 
 <template>
 	<!-- Node Item is draggable only if it doesn't contain actions -->
-	<N8nNodeCreatorNode
-		:draggable="!showActionArrow"
-		:class="$style.nodeItem"
-		:description="description"
-		:title="displayName"
-		:show-action-arrow="showActionArrow"
-		:is-trigger="isTrigger"
-		:is-official="isOfficial"
-		:data-test-id="dataTestId"
-		:tag="tag"
-		@dragstart="onDragStart"
-		@dragend="onDragEnd"
-	>
-		<template #icon>
-			<div v-if="isSubNodeType" :class="$style.subNodeBackground"></div>
-			<NodeIcon
-				:class="$style.nodeIcon"
-				:node-type="nodeType"
-				color-default="var(--color--foreground--shade-2)"
-			/>
+	<N8nTooltip :disabled="!easyGuideDescription" placement="right">
+		<template #content>
+			<span style="white-space: pre-wrap">{{ easyGuideDescription }}</span>
 		</template>
-
-		<template v-if="isOfficial" #extraDetails>
-			<N8nTooltip placement="top" :show-after="500">
-				<template #content>
-					{{ i18n.baseText('generic.officialNode.tooltip', { interpolate: { author: author } }) }}
-				</template>
-				<OfficialIcon :class="[$style.icon, $style.official]" />
-			</N8nTooltip>
-		</template>
-
-		<template
-			v-else-if="
-				isCommunityNode && !isCommunityNodePreview && !activeViewStack?.communityNodeDetails
-			"
-			#extraDetails
+		<N8nNodeCreatorNode
+			:draggable="!showActionArrow"
+			:class="$style.nodeItem"
+			:description="description"
+			:title="displayName"
+			:show-action-arrow="showActionArrow"
+			:is-trigger="isTrigger"
+			:is-official="isOfficial"
+			:data-test-id="dataTestId"
+			:tag="tag"
+			@dragstart="onDragStart"
+			@dragend="onDragEnd"
 		>
-			<N8nTooltip placement="top" :show-after="500">
-				<template #content>
-					<p
-						v-n8n-html="
-							i18n.baseText('generic.communityNode.tooltip', {
-								interpolate: {
-									packageName: nodeType.name.split('.')[0],
-									docURL: COMMUNITY_NODES_INSTALLATION_DOCS_URL,
-								},
-							})
-						"
-						:class="$style.communityNodeIcon"
-						@click="onCommunityNodeTooltipClick"
-					/>
-				</template>
-				<N8nIcon size="small" :class="$style.icon" icon="box" />
-			</N8nTooltip>
-		</template>
-		<template #dragContent>
-			<div
-				v-show="dragging"
-				ref="draggableDataTransfer"
-				:class="$style.draggable"
-				:style="draggableStyle"
-			>
+			<template #icon>
+				<div v-if="isSubNodeType" :class="$style.subNodeBackground"></div>
 				<NodeIcon
+					:class="$style.nodeIcon"
 					:node-type="nodeType"
-					:size="40"
-					:shrink="false"
 					color-default="var(--color--foreground--shade-2)"
-					@click.capture.stop
 				/>
-			</div>
-		</template>
-	</N8nNodeCreatorNode>
+			</template>
+
+			<template v-if="isOfficial" #extraDetails>
+				<N8nTooltip placement="top" :show-after="500">
+					<template #content>
+						{{ i18n.baseText('generic.officialNode.tooltip', { interpolate: { author: author } }) }}
+					</template>
+					<OfficialIcon :class="[$style.icon, $style.official]" />
+				</N8nTooltip>
+			</template>
+
+			<template
+				v-else-if="
+					isCommunityNode && !isCommunityNodePreview && !activeViewStack?.communityNodeDetails
+				"
+				#extraDetails
+			>
+				<N8nTooltip placement="top" :show-after="500">
+					<template #content>
+						<p
+							v-n8n-html="
+								i18n.baseText('generic.communityNode.tooltip', {
+									interpolate: {
+										packageName: nodeType.name.split('.')[0],
+										docURL: COMMUNITY_NODES_INSTALLATION_DOCS_URL,
+									},
+								})
+							"
+							:class="$style.communityNodeIcon"
+							@click="onCommunityNodeTooltipClick"
+						/>
+					</template>
+					<N8nIcon size="small" :class="$style.icon" icon="box" />
+				</N8nTooltip>
+			</template>
+			<template #dragContent>
+				<div
+					v-show="dragging"
+					ref="draggableDataTransfer"
+					:class="$style.draggable"
+					:style="draggableStyle"
+				>
+					<NodeIcon
+						:node-type="nodeType"
+						:size="40"
+						:shrink="false"
+						color-default="var(--color--foreground--shade-2)"
+						@click.capture.stop
+					/>
+				</div>
+			</template>
+		</N8nNodeCreatorNode>
+	</N8nTooltip>
 </template>
 
 <style lang="scss" module>

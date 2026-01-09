@@ -1,0 +1,21 @@
+{
+	"nodes": {
+		"n8n-nodes-base.notion": "Notion은 메모, 작업 관리, 데이터베이스 등을 통합한 올인원 워크스페이스입니다. 이 노드를 사용하면 Notion 페이지를 생성, 업데이트하거나 데이터베이스를 조회할 수 있습니다.",
+		"n8n-nodes-base.notionTrigger": "Notion 데이터베이스에 새로운 페이지가 추가되거나 변경될 때 자동으로 워크플로우를 시작합니다.",
+		"n8n-nodes-base.httpRequest": "다른 웹사이트나 API 서버와 통신할 수 있는 만능 노드입니다. 데이터를 가져오거나(GET), 보내거나(POST), 수정할 때 사용합니다."
+	},
+	"parameters": {
+		"n8n-nodes-base.notionTrigger": {
+			"pollTimes": "얼마나 자주 Notion을 확인해서 새로운 데이터가 있는지 검사할지 설정합니다. (예: 1분마다)",
+			"event": "어떤 일이 발생했을 때 워크플로우를 실행할지 선택합니다. (예: 페이지가 추가됨, 페이지가 업데이트됨)",
+			"databaseId": "감시할 Notion 데이터베이스를 선택합니다. 리스트에 없다면 Notion 연결 설정을 확인하세요."
+		},
+		"n8n-nodes-base.httpRequest": {
+			"method": "서버에 어떤 요청을 보낼지 정합니다. GET(조회), POST(생성), PUT(수정) 등이 있습니다.",
+			"url": "통신하려는 서버의 주소(URL)를 입력하세요. 예: http://example.com/api/users",
+			"authentication": "서버에 접속하기 위한 암호나 인증 방식을 선택합니다. (예: Header Auth, Basic Auth)",
+			"sendQuery": "URL 뒤에 ?key=value 형태로 붙여서 보낼 추가 정보를 설정합니다.",
+			"specifyQuery": "쿼리 파라미터를 어떻게 입력할지 선택합니다."
+		}
+	}
+}

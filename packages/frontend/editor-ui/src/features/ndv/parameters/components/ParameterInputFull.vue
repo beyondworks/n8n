@@ -34,6 +34,7 @@ import {
 import { useTelemetry } from '@/app/composables/useTelemetry';
 import { inject } from 'vue';
 import { ExpressionLocalResolveContextSymbol } from '@/app/constants';
+import koGuide from '@/constants/ko_easy_guide.json';
 
 import { N8nInputLabel } from '@n8n/design-system';
 type Props = {
@@ -106,6 +107,26 @@ const isContentOverride = computed(
 const hint = computed(() =>
 	i18n.nodeText(activeNode.value?.type).hint(props.parameter, props.path),
 );
+
+const koreanEasyGuide = computed(() => {
+	const nodeType = activeNode.value?.type;
+	if (!nodeType || !props.parameter.name) return undefined;
+	// @ts-ignore
+	const nodeParams = koGuide.parameters[nodeType];
+	// @ts-ignore
+	return nodeParams ? nodeParams[props.parameter.name] : undefined;
+});
+
+const displayTooltip = computed(() => {
+	const originalText = props.hideLabel
+		? ''
+		: i18n.nodeText(activeNode.value?.type).inputLabelDescription(props.parameter, props.path);
+
+	if (koreanEasyGuide.value) {
+		return `[가이드] ${koreanEasyGuide.value}\n\n${originalText || ''}`;
+	}
+	return originalText;
+});
 
 const isResourceLocator = computed(
 	() => props.parameter.type === 'resourceLocator' || props.parameter.type === 'workflowSelector',
@@ -328,9 +349,7 @@ function removeOverride(clearField = false) {
 		ref="inputLabel"
 		:class="[$style.wrapper]"
 		:label="hideLabel ? '' : i18n.nodeText(activeNode?.type).inputLabelDisplayName(parameter, path)"
-		:tooltip-text="
-			hideLabel ? '' : i18n.nodeText(activeNode?.type).inputLabelDescription(parameter, path)
-		"
+		:tooltip-text="displayTooltip"
 		:show-tooltip="focused"
 		:show-options="menuExpanded || focused || forceShowExpression"
 		:options-position="optionsPosition"
