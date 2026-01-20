@@ -1,0 +1,324 @@
+{
+	"name": "Daily News Clipping (Perplexity + Notion)",
+	"nodes": [
+		{
+			"parameters": {
+				"rule": {
+					"interval": [{ "field": "cronExpression", "expression": "0 9 * * *" }]
+				}
+			},
+			"id": "schedule",
+			"name": "매일 아침 9시",
+			"type": "n8n-nodes-base.scheduleTrigger",
+			"typeVersion": 1.2,
+			"position": [0, 300]
+		},
+		{
+			"parameters": {
+				"jsCode": "const today = new Date().toISOString().split('T')[0];\nreturn [\n  {\n    json: {\n      category: 'AI',\n      query: 'AI tools practical tips news 2026',\n      dbId: '241003c7-f7be-806c-8a6e-c0e95ed37fe3',\n      date: today\n    }\n  },\n  {\n    json: {\n      category: 'Design',\n      query: 'UI UX design trends tips 2026',\n      dbId: '241003c7-f7be-804f-a021-fc24777ca9ad',\n      date: today\n    }\n  },\n  {\n    json: {\n      category: 'Branding',\n      query: 'branding strategy tips 2026',\n      dbId: '247003c7-f7be-803a-83f5-fd9494d24d62',\n      date: today\n    }\n  },\n  {\n    json: {\n      category: 'Build',\n      query: 'web development coding tips 2026',\n      dbId: '247003c7-f7be-8074-a583-e1638fd3cfed',\n      date: today\n    }\n  },\n  {\n    json: {\n      category: 'Marketing',\n      query: 'marketing growth strategy 2026',\n      dbId: '247003c7-f7be-8035-83f4-d39480d66503',\n      date: today\n    }\n  }\n];"
+			},
+			"id": "config",
+			"name": "카테고리 정의",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [220, 300]
+		},
+		{
+			"parameters": {
+				"batchSize": 1,
+				"options": {}
+			},
+			"id": "loop",
+			"name": "Loop Categories",
+			"type": "n8n-nodes-base.splitInBatches",
+			"typeVersion": 3,
+			"position": [440, 300]
+		},
+		{
+			"parameters": {
+				"method": "POST",
+				"url": "https://api.perplexity.ai/chat/completions",
+				"authentication": "genericCredentialType",
+				"genericAuthType": "httpHeaderAuth",
+				"sendBody": true,
+				"specifyBody": "json",
+				"jsonBody": "={\n  \"model\": \"sonar\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a news researcher. Search for latest news about the topic. Return exactly 5 items as JSON array with fields: title, url, source, summary (Korean).\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Find 5 news about: {{ $json.query }}\"\n    }\n  ],\n  \"return_citations\": true\n}",
+				"options": {}
+			},
+			"id": "perplexity",
+			"name": "Perplexity 검색",
+			"type": "n8n-nodes-base.httpRequest",
+			"typeVersion": 4.2,
+			"position": [660, 300],
+			"credentials": {
+				"httpHeaderAuth": {
+					"id": "NcEOsIRwIqlaElTb",
+					"name": "Header Auth account"
+				}
+			}
+		},
+		{
+			"parameters": {
+				"jsCode": "const input = $input.first().json;\nconst categoryItem = $('Loop Categories').item.json;\nlet content = '';\ntry {\n  content = input.choices?.[0]?.message?.content || '';\n} catch (e) {\n  content = '';\n}\n\nlet results = [];\ntry {\n  const jsonMatch = content.match(/\\[\\s*\\{[\\s\\S]*\\}\\s*\\]/g);\n  if (jsonMatch) {\n    results = JSON.parse(jsonMatch[0]);\n  } else {\n    const citations = input.citations || [];\n    results = citations.slice(0, 5).map((url, i) => ({\n      title: `${categoryItem.category} News ${i + 1}`,\n      url: url,\n      source: new URL(url).hostname,\n      summary: '요약 실패'\n    }));\n  }\n} catch (e) {\n  const citations = input.citations || [];\n  results = citations.slice(0, 5).map((url, i) => ({\n    title: `${categoryItem.category} News ${i + 1}`,\n    url: url,\n    source: new URL(url).hostname,\n    summary: '요약 실패'\n  }));\n}\n\nreturn results.slice(0, 5).map(item => ({\n  json: {\n    title: item.title || 'No Title',\n    url: item.url || '',\n    source: item.source || '',\n    summary: item.summary || '',\n    date: categoryItem.date,\n    category: categoryItem.category,\n    dbId: categoryItem.dbId\n  }\n}));"
+			},
+			"id": "parse",
+			"name": "결과 파싱",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [880, 300]
+		},
+		{
+			"parameters": {
+				"rules": {
+					"values": [
+						{
+							"outputKey": "AI",
+							"conditions": {
+								"options": { "caseSensitive": true },
+								"combinator": "and",
+								"conditions": [
+									{
+										"leftValue": "={{ $json.category }}",
+										"rightValue": "AI",
+										"operator": { "type": "string", "operation": "equals" }
+									}
+								]
+							}
+						},
+						{
+							"outputKey": "Design",
+							"conditions": {
+								"options": { "caseSensitive": true },
+								"combinator": "and",
+								"conditions": [
+									{
+										"leftValue": "={{ $json.category }}",
+										"rightValue": "Design",
+										"operator": { "type": "string", "operation": "equals" }
+									}
+								]
+							}
+						},
+						{
+							"outputKey": "Branding",
+							"conditions": {
+								"options": { "caseSensitive": true },
+								"combinator": "and",
+								"conditions": [
+									{
+										"leftValue": "={{ $json.category }}",
+										"rightValue": "Branding",
+										"operator": { "type": "string", "operation": "equals" }
+									}
+								]
+							}
+						},
+						{
+							"outputKey": "Build",
+							"conditions": {
+								"options": { "caseSensitive": true },
+								"combinator": "and",
+								"conditions": [
+									{
+										"leftValue": "={{ $json.category }}",
+										"rightValue": "Build",
+										"operator": { "type": "string", "operation": "equals" }
+									}
+								]
+							}
+						},
+						{
+							"outputKey": "Marketing",
+							"conditions": {
+								"options": { "caseSensitive": true },
+								"combinator": "and",
+								"conditions": [
+									{
+										"leftValue": "={{ $json.category }}",
+										"rightValue": "Marketing",
+										"operator": { "type": "string", "operation": "equals" }
+									}
+								]
+							}
+						}
+					]
+				},
+				"options": {}
+			},
+			"id": "switch",
+			"name": "카테고리 분기",
+			"type": "n8n-nodes-base.switch",
+			"typeVersion": 3.2,
+			"position": [1100, 300]
+		},
+		{
+			"parameters": {
+				"resource": "databasePage",
+				"operation": "create",
+				"databaseId": {
+					"__rl": true,
+					"mode": "id",
+					"value": "241003c7-f7be-806c-8a6e-c0e95ed37fe3"
+				},
+				"title": "={{ $json.title }}",
+				"options": {}
+			},
+			"id": "notion_ai",
+			"name": "Notion AI",
+			"type": "n8n-nodes-base.notion",
+			"typeVersion": 2.2,
+			"position": [1320, 0],
+			"credentials": { "notionApi": { "id": "xw5kbbLStDNvEvBq", "name": "Notion account" } }
+		},
+		{
+			"parameters": {
+				"resource": "databasePage",
+				"operation": "create",
+				"databaseId": {
+					"__rl": true,
+					"mode": "id",
+					"value": "241003c7-f7be-804f-a021-fc24777ca9ad"
+				},
+				"title": "={{ $json.title }}",
+				"propertiesUi": {
+					"propertyValues": [
+						{ "key": "URL", "urlValue": "={{ $json.url }}" },
+						{ "key": "Date", "date": "={{ $json.date }}", "includeTime": false },
+						{ "key": "Source", "richTextValue": "={{ $json.source }}" },
+						{ "key": "Summary", "richTextValue": "={{ $json.summary }}" }
+					]
+				},
+				"options": {}
+			},
+			"id": "notion_design",
+			"name": "Notion Design",
+			"type": "n8n-nodes-base.notion",
+			"typeVersion": 2.2,
+			"position": [1320, 150],
+			"credentials": { "notionApi": { "id": "xw5kbbLStDNvEvBq", "name": "Notion account" } }
+		},
+		{
+			"parameters": {
+				"resource": "databasePage",
+				"operation": "create",
+				"databaseId": {
+					"__rl": true,
+					"mode": "id",
+					"value": "247003c7-f7be-803a-83f5-fd9494d24d62"
+				},
+				"title": "={{ $json.title }}",
+				"propertiesUi": {
+					"propertyValues": [
+						{ "key": "URL", "urlValue": "={{ $json.url }}" },
+						{ "key": "Date", "date": "={{ $json.date }}", "includeTime": false },
+						{ "key": "Source", "richTextValue": "={{ $json.source }}" },
+						{ "key": "Summary", "richTextValue": "={{ $json.summary }}" }
+					]
+				},
+				"options": {}
+			},
+			"id": "notion_branding",
+			"name": "Notion Branding",
+			"type": "n8n-nodes-base.notion",
+			"typeVersion": 2.2,
+			"position": [1320, 300],
+			"credentials": { "notionApi": { "id": "xw5kbbLStDNvEvBq", "name": "Notion account" } }
+		},
+		{
+			"parameters": {
+				"resource": "databasePage",
+				"operation": "create",
+				"databaseId": {
+					"__rl": true,
+					"mode": "id",
+					"value": "247003c7-f7be-8074-a583-e1638fd3cfed"
+				},
+				"title": "={{ $json.title }}",
+				"propertiesUi": {
+					"propertyValues": [
+						{ "key": "URL", "urlValue": "={{ $json.url }}" },
+						{ "key": "Date", "date": "={{ $json.date }}", "includeTime": false },
+						{ "key": "Source", "selectValue": "Web" },
+						{ "key": "Summary", "richTextValue": "={{ $json.summary }}" }
+					]
+				},
+				"options": {}
+			},
+			"id": "notion_build",
+			"name": "Notion Build",
+			"type": "n8n-nodes-base.notion",
+			"typeVersion": 2.2,
+			"position": [1320, 450],
+			"credentials": { "notionApi": { "id": "xw5kbbLStDNvEvBq", "name": "Notion account" } }
+		},
+		{
+			"parameters": {
+				"resource": "databasePage",
+				"operation": "create",
+				"databaseId": {
+					"__rl": true,
+					"mode": "id",
+					"value": "247003c7-f7be-8035-83f4-d39480d66503"
+				},
+				"title": "={{ $json.title }}",
+				"propertiesUi": {
+					"propertyValues": [
+						{ "key": "URL", "urlValue": "={{ $json.url }}" },
+						{ "key": "Date", "date": "={{ $json.date }}", "includeTime": false },
+						{ "key": "Source", "richTextValue": "={{ $json.source }}" },
+						{ "key": "Summary", "richTextValue": "={{ $json.summary }}" }
+					]
+				},
+				"options": {}
+			},
+			"id": "notion_marketing",
+			"name": "Notion Marketing",
+			"type": "n8n-nodes-base.notion",
+			"typeVersion": 2.2,
+			"position": [1320, 600],
+			"credentials": { "notionApi": { "id": "xw5kbbLStDNvEvBq", "name": "Notion account" } }
+		},
+		{
+			"parameters": {
+				"amount": 2,
+				"unit": "seconds"
+			},
+			"id": "wait",
+			"name": "2초 대기",
+			"type": "n8n-nodes-base.wait",
+			"typeVersion": 1,
+			"position": [1760, 300]
+		},
+		{
+			"parameters": {},
+			"id": "merge",
+			"name": "Merge Branches",
+			"type": "n8n-nodes-base.merge",
+			"typeVersion": 3,
+			"position": [1540, 300]
+		}
+	],
+	"connections": {
+		"매일 아침 9시": { "main": [[{ "node": "카테고리 정의", "type": "main", "index": 0 }]] },
+		"카테고리 정의": { "main": [[{ "node": "Loop Categories", "type": "main", "index": 0 }]] },
+		"Loop Categories": { "main": [[{ "node": "Perplexity 검색", "type": "main", "index": 0 }]] },
+		"Perplexity 검색": { "main": [[{ "node": "결과 파싱", "type": "main", "index": 0 }]] },
+		"결과 파싱": { "main": [[{ "node": "카테고리 분기", "type": "main", "index": 0 }]] },
+		"카테고리 분기": {
+			"main": [
+				[{ "node": "Notion AI", "type": "main", "index": 0 }],
+				[{ "node": "Notion Design", "type": "main", "index": 0 }],
+				[{ "node": "Notion Branding", "type": "main", "index": 0 }],
+				[{ "node": "Notion Build", "type": "main", "index": 0 }],
+				[{ "node": "Notion Marketing", "type": "main", "index": 0 }]
+			]
+		},
+		"Notion AI": { "main": [[{ "node": "Merge Branches", "type": "main", "index": 0 }]] },
+		"Notion Design": { "main": [[{ "node": "Merge Branches", "type": "main", "index": 0 }]] },
+		"Notion Branding": { "main": [[{ "node": "Merge Branches", "type": "main", "index": 0 }]] },
+		"Notion Build": { "main": [[{ "node": "Merge Branches", "type": "main", "index": 0 }]] },
+		"Notion Marketing": { "main": [[{ "node": "Merge Branches", "type": "main", "index": 0 }]] },
+		"Merge Branches": { "main": [[{ "node": "2초 대기", "type": "main", "index": 0 }]] },
+		"2초 대기": { "main": [[{ "node": "Loop Categories", "type": "main", "index": 0 }]] }
+	}
+}
