@@ -1,4 +1,7 @@
 # 🚀 n8n 자동화 워크플로우 - 설치 가이드
+# 🚀 n8n Automation Workflow - Installation Guide
+
+> **한국어** | [English](#-english-guide)
 
 **초보자도 10분 안에 설치 가능!** Mac과 Windows 모두 지원합니다.
 
@@ -282,9 +285,281 @@ docker-compose up -d    # 새로 시작
 
 ---
 
-## 📞 도움이 필요하신가요?
+<br><br>
 
-- **GitHub Issues**: [이슈 등록](https://github.com/beyondworks/n8n/issues)
+---
+
+# 🌐 English Guide
+
+**Beginners can install in 10 minutes!** Supports both Mac and Windows.
+
+---
+
+## 📋 Table of Contents
+
+1. [Prerequisites](#1-prerequisites-docker-installation)
+2. [Download Project](#2-download-project)
+3. [Get API Keys](#3-get-api-keys)
+4. [Run n8n](#4-run-n8n)
+5. [Configure Workflow](#5-configure-workflow)
+6. [Common Commands](#6-common-commands)
+7. [Troubleshooting](#7-troubleshooting-1)
+
+---
+
+## 1. Prerequisites (Docker Installation)
+
+### What is Docker?
+> Docker lets you package applications in "containers" that run identically on any computer.
+> Works the same on Mac, Windows, and Linux.
+
+### Mac Users
+
+**Method 1: Official Installation (Recommended)**
+1. Visit [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/)
+2. Click **Download for Mac**
+3. Run the downloaded `.dmg` file
+4. Drag Docker icon to Applications folder
+5. Launch Docker from Applications
+6. Verify 🐳 whale icon in menu bar
+
+**Method 2: Install via Homebrew**
+```bash
+brew install --cask docker
+```
+
+### Windows Users
+
+1. Visit [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
+2. Click **Download for Windows**
+3. Run the installer
+4. Check "Use WSL 2" during installation (recommended)
+5. Reboot after installation
+6. Launch Docker Desktop
+
+### Verify Installation
+In Terminal (Mac) or Command Prompt (Windows):
+```bash
+docker --version
+# Example output: Docker version 24.0.0, build abc123
+
+docker-compose --version
+# Example output: Docker Compose version v2.20.0
+```
+
+---
+
+## 2. Download Project
+
+### Method 1: Git Clone (Recommended)
+```bash
+git clone https://github.com/beyondworks/n8n.git
+cd n8n/docker
+```
+
+### Method 2: ZIP Download
+1. Visit https://github.com/beyondworks/n8n
+2. Click green **Code** button
+3. Click **Download ZIP**
+4. Extract and navigate to `docker` folder
+
+---
+
+## 3. Get API Keys
+
+This project requires 3 API keys:
+
+| API | Purpose | Required |
+|-----|---------|----------|
+| Perplexity | News search | ✅ Required |
+| Notion | Data storage | ✅ Required |
+| OpenAI | AI summary | ⬜ Optional |
+
+---
+
+### 3-1. Perplexity API Key
+
+**What is Perplexity?** An AI-powered search engine for latest news and information.
+
+**Steps:**
+
+1. Visit [perplexity.ai](https://www.perplexity.ai/)
+2. Click **Sign Up** in top right
+3. After login, click profile in bottom left
+4. Click **Settings**
+5. Click **API** in left menu
+6. Click **Generate** to create API key
+7. Copy the key (e.g., `pplx-xxxxxxxxxxxx`)
+
+> ⚠️ **Note**: API key is shown only once. Make sure to copy it!
+
+---
+
+### 3-2. Notion API Key
+
+**What is Notion?** An all-in-one workspace for notes, databases, and documents.
+
+**Steps:**
+
+1. Sign up at [notion.so](https://www.notion.so/)
+2. Visit [notion.so/my-integrations](https://www.notion.so/my-integrations)
+3. Click **+ New integration**
+4. Configure:
+   - **Name**: `n8n-workflow` (any name)
+   - **Associated workspace**: Select your workspace
+   - **Type**: Internal
+5. Click **Submit**
+6. Copy **Internal Integration Secret** (e.g., `secret_xxxxxxxxxxxx`)
+
+**Connect to Notion Page:**
+1. Open the Notion page n8n will access
+2. Click **···** in top right
+3. Click **Connections** → **Connect to**
+4. Select your integration (`n8n-workflow`)
+
+---
+
+### 3-3. OpenAI API Key (Optional)
+
+**What is OpenAI?** The company behind ChatGPT, providing AI text generation.
+
+**Steps:**
+
+1. Visit [platform.openai.com](https://platform.openai.com/)
+2. Sign up or log in
+3. Click profile → **View API keys**
+4. Click **+ Create new secret key**
+5. Enter name and click **Create secret key**
+6. Copy the key (e.g., `sk-xxxxxxxxxxxx`)
+
+> 💡 **Note**: OpenAI API is paid. $5 free credits provided for new users.
+
+---
+
+## 4. Run n8n
+
+### 4-1. Set Environment Variables
+
+```bash
+cd n8n/docker
+cp .env.example .env
+```
+
+### 4-2. Enter API Keys
+
+Edit `.env` file:
+
+**Mac:**
+```bash
+nano .env
+# or
+open -e .env
+```
+
+**Windows:**
+```bash
+notepad .env
+```
+
+**Example:**
+```
+PERPLEXITY_API_KEY=pplx-abc123def456
+NOTION_API_KEY=secret_xyz789abc123
+OPENAI_API_KEY=sk-abc123xyz789
+```
+
+### 4-3. Start n8n
+
+```bash
+docker-compose up -d
+```
+
+### 4-4. Access n8n
+
+Open browser:
+```
+http://localhost:5678
+```
+
+🎉 **If you see n8n interface, success!**
+
+---
+
+## 5. Configure Workflow
+
+### 5-1. Import Workflow
+
+1. Access n8n (http://localhost:5678)
+2. Click **Workflows** in left menu
+3. Click **⋮** → **Import from File**
+4. Select `workflows/daily-news-clipping.json`
+5. Click **Import**
+
+### 5-2. Set Credentials
+
+If you see red warnings:
+
+1. Click the warning node
+2. Select **Credential** → **Create New Credential**
+3. Enter API key for the service
+4. Click **Save**
+
+### 5-3. Activate Workflow
+
+1. Toggle **Active** in top right of workflow
+2. Runs automatically every day at 9 AM!
+
+**Manual Test:**
+- Click **Execute Workflow** to run immediately
+
+---
+
+## 6. Common Commands
+
+| Command | Description |
+|---------|-------------|
+| `docker-compose up -d` | Start n8n (background) |
+| `docker-compose down` | Stop n8n |
+| `docker-compose restart` | Restart n8n |
+| `docker-compose logs -f` | View live logs |
+| `docker-compose pull && docker-compose up -d` | Update to latest |
+
+---
+
+## 7. Troubleshooting
+
+### Docker not running
+```bash
+# Check if Docker Desktop is running
+# Mac: Look for 🐳 icon in menu bar
+# Windows: Check Docker icon in system tray
+```
+
+### Port already in use
+```bash
+# Change port in docker-compose.yml:
+ports:
+  - "5679:5678"  # Change to 5679
+# Access: http://localhost:5679
+```
+
+### Check container status
+```bash
+docker ps
+# Verify n8n container shows "Up"
+```
+
+### Reset everything
+```bash
+docker-compose down -v  # Remove including data
+docker-compose up -d    # Fresh start
+```
+
+---
+
+## 📞 Need Help?
+
+- **GitHub Issues**: [Create Issue](https://github.com/beyondworks/n8n/issues)
 - **Email**: beyondworks.br@gmail.com
 
 ---
