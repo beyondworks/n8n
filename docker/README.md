@@ -240,7 +240,60 @@ http://localhost:5678
 
 ---
 
-## 6. 자주 쓰는 명령어
+## 6. 🌐 터널링 (외부 접속)
+
+터널링을 사용하면 **외부 네트워크에서 n8n에 접속**할 수 있습니다.
+
+### 터널링이 필요한 경우
+- ✅ Webhook을 외부 서비스에서 수신해야 할 때
+- ✅ 다른 기기/네트워크에서 n8n에 접속할 때
+- ✅ 테스트용 공개 URL이 필요할 때
+
+### 터널 활성화 방법
+
+`.env` 파일에서 터널 모드를 활성화합니다:
+
+```bash
+# .env 파일
+N8N_TUNNEL_MODE=true
+```
+
+n8n을 재시작합니다:
+```bash
+docker-compose restart
+```
+
+### 터널 URL 확인
+
+터널이 활성화되면 로그에서 공개 URL을 확인할 수 있습니다:
+
+```bash
+docker-compose logs -f
+```
+
+**출력 예시:**
+```
+n8n  | Tunnel URL: https://xxxxx.hooks.n8n.cloud
+```
+
+이 URL로 외부에서 n8n에 접속할 수 있습니다!
+
+### 보안 설정 (권장)
+
+터널 사용 시 **기본 인증**을 활성화하세요:
+
+```bash
+# .env 파일
+N8N_BASIC_AUTH_ACTIVE=true
+N8N_BASIC_AUTH_USER=admin
+N8N_BASIC_AUTH_PASSWORD=your_secure_password
+```
+
+> ⚠️ **주의**: 터널 모드는 개발/테스트 용도로만 사용하세요. 프로덕션에서는 별도 도메인과 SSL을 설정하는 것을 권장합니다.
+
+---
+
+## 7. 자주 쓰는 명령어
 
 | 명령어 | 설명 |
 |--------|------|
@@ -253,7 +306,7 @@ http://localhost:5678
 
 ---
 
-## 7. 문제 해결
+## 8. 문제 해결
 
 ### Docker가 실행되지 않아요
 ```bash

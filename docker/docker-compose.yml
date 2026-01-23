@@ -22,15 +22,33 @@ services:
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
 
-      # 보안 설정 (프로덕션에서는 변경 필요)
-      - N8N_BASIC_AUTH_ACTIVE=false
+      # ================================
+      # 🌐 터널링 설정 (외부 접속 활성화)
+      # ================================
+      # 개발/테스트용 터널 (n8n 내장)
+      - N8N_TUNNEL_MODE=${N8N_TUNNEL_MODE:-false}
 
+      # Webhook URL 설정 (터널 사용 시 자동 설정됨)
+      # 프로덕션에서는 실제 도메인으로 변경
+      # - WEBHOOK_URL=https://your-domain.com/
+
+      # ================================
+      # 보안 설정
+      # ================================
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE:-false}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-}
+
+      # ================================
       # 워크플로우 설정
+      # ================================
       - EXECUTIONS_DATA_SAVE_ON_ERROR=all
       - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
       - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
 
-      # API 키 (선택사항 - .env 파일에서 로드)
+      # ================================
+      # API 키 (.env 파일에서 로드)
+      # ================================
       - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - NOTION_API_KEY=${NOTION_API_KEY:-}
