@@ -1,0 +1,10 @@
+# Docker 관련 파일
+docker/.env
+docker/n8n_data/
+
+# OS 파일
+.DS_Store
+Thumbs.db
+
+# 로그
+*.log

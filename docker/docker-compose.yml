@@ -1,0 +1,54 @@
+# n8n Docker Compose 설정
+# 사용법: docker-compose up -d
+
+version: '3.8'
+
+services:
+  n8n:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - '5678:5678'
+    environment:
+      # 시간대 설정 (한국)
+      - GENERIC_TIMEZONE=Asia/Seoul
+      - TZ=Asia/Seoul
+
+      # n8n 기본 설정
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+
+      # 보안 설정 (프로덕션에서는 변경 필요)
+      - N8N_BASIC_AUTH_ACTIVE=false
+
+      # 워크플로우 설정
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
+
+      # API 키 (선택사항 - .env 파일에서 로드)
+      - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - NOTION_API_KEY=${NOTION_API_KEY:-}
+
+    volumes:
+      # 데이터 영속화 (워크플로우, 인증정보 등)
+      - n8n_data:/home/node/.n8n
+
+      # 워크플로우 파일 마운트 (선택사항)
+      - ./workflows:/home/node/workflows:ro
+
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:5678/healthz']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  n8n_data:
+    driver: local
