@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "category": "AI",
+    "title": "n8n 자동화 툴로 업무 효율 극대화하기",
+    "summary": "자연어 명령을 통해 n8n 자동화 워크플로우를 쉽게 생성하고, 다양한 플랫폼에서 데이터 통합을 통해 마케팅 대시보드를 구축하는 방법에 대해 소개합니다. 이 기술을 통해 커스터마이징과 대량 업무 처리의 효율성을 높일 수 있습니다.",
+    "tags": [
+      "n8n",
+      "자동화",
+      "워크플로우",
+      "마케팅",
+      "데이터 통합"
+    ]
+  },
+  "sections": [
+    {
+      "type": "intro",
+      "heading": "자동화로 업무 효율성을 높이세요",
+      "content": "n8n과 같은 자동화 도구를 통해 업무의 효율성을 극대화할 수 있습니다. 자연어 명령을 통해 간단하게 워크플로우를 생성하고, 다양한 플랫폼에서 데이터를 통합하여 마케팅 대시보드를 구축하는 방법을 소개합니다."
+    },
+    {
+      "type": "main",
+      "heading": "자연어 명령을 활용한 n8n 자동화",
+      "content": "n8n은 자연어 명령을 통해 자동화 워크플로우를 쉽게 생성할 수 있는 도구입니다.\n- **비용 제로**: 무료로 이용 가능\n- **자연어 프롬프트**: 한두 줄의 명령어로 워크플로우 생성\n- **한글 지원**: 사용이 더욱 간편\n\n이러한 기능 덕분에 복잡한 자동화 설정을 간단하게 해결할 수 있습니다.",
+      "image_prompt": "A person using a computer with a sleek interface displaying natural language commands converting into an automated workflow in a futuristic setting."
+    },
+    {
+      "type": "main",
+      "heading": "마케팅 대시보드의 통합",
+      "content": "다양한 플랫폼의 데이터를 통합하여 마케팅 대시보드를 자동으로 생성할 수 있습니다.\n- **다양한 플랫폼 지원**: 쿠팡, 스마트 스토어, 메타 광고 등\n- **자동 데이터 수집**: API를 통해 각 플랫폼의 데이터를 자동으로 취합\n- **인사이트 강화**: 추가 AI 노드를 통해 데이터 분석 및 인사이트 도출",
+      "image_prompt": "A dynamic digital dashboard showing integrated marketing metrics from multiple e-commerce platforms like Coupang and Google Ads, visually depicting data insights."
+    },
+    {
+      "type": "conclusion",
+      "heading": "자동화 기술로 효율화 실현",
+      "content": "자동화 기술을 활용하면 반복적인 업무를 줄이고 효율적으로 시간과 비용을 절약할 수 있습니다. 각자의 업무에 맞게 자동화 툴을 활용하여 효율화를 실현해 보세요. 커뮤니티와 웨비나를 통해 더 많은 정보와 사례를 공유받을 수 있습니다."
+    }
+  ]
+}
