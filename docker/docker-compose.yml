@@ -19,8 +19,8 @@ services:
 
       # n8n 기본 설정
       - N8N_HOST=localhost
-      - N8N_PORT=5678
       - N8N_PROTOCOL=http
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
 
       # ================================
       # 🌐 터널링 설정 (외부 접속 활성화)
@@ -45,6 +45,12 @@ services:
       - EXECUTIONS_DATA_SAVE_ON_ERROR=all
       - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
       - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
+
+      # ================================
+      # Execute Command 노드 활성화
+      # ================================
+      - NODE_FUNCTION_ALLOW_BUILTIN=*
+      - NODE_FUNCTION_ALLOW_EXTERNAL=*
 
       # ================================
       # API 키 (.env 파일에서 로드)
