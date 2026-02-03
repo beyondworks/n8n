@@ -1,0 +1,87 @@
+{
+  "name": "[스케줄비서] 리마인더 (10분마다 체크)",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "10분마다 체크",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ssh",
+      "name": "리마인더 확인",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [220, 0],
+      "parameters": {
+        "command": "python3 /path/to/schedule-assistant/run.py \"check\" reminder"
+      },
+      "credentials": {
+        "sshPassword": {
+          "id": "YOUR_SSH_CREDENTIAL_ID",
+          "name": "SSH localhost"
+        }
+      }
+    },
+    {
+      "id": "parse",
+      "name": "응답 파싱",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "parameters": {
+        "jsCode": "const stdout = $input.first().json.stdout || '{}';\n\ntry {\n  const result = JSON.parse(stdout);\n  \n  // 리마인더가 없으면 스킵\n  if (result.has_reminder === false || !result.response) {\n    return [];\n  }\n  \n  return [{ json: { response: result.response, channel: 'schedule', hasReminder: true } }];\n} catch (e) {\n  return [];\n}"
+      }
+    },
+    {
+      "id": "slack",
+      "name": "Slack 전송",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [660, 0],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "schedule"
+        },
+        "text": "={{ $json.response }}"
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "10분마다 체크": {
+      "main": [[{"node": "리마인더 확인", "type": "main", "index": 0}]]
+    },
+    "리마인더 확인": {
+      "main": [[{"node": "응답 파싱", "type": "main", "index": 0}]]
+    },
+    "응답 파싱": {
+      "main": [[{"node": "Slack 전송", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Seoul"
+  }
+}

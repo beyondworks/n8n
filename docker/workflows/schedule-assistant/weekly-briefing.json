@@ -1,0 +1,87 @@
+{
+  "name": "[스케줄비서] 위클리 브리핑 (월요일 9시)",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "월요일 9시 트리거",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ssh",
+      "name": "위클리 브리핑 생성",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [220, 0],
+      "parameters": {
+        "command": "python3 /path/to/schedule-assistant/run.py \"weekly\" weekly_briefing"
+      },
+      "credentials": {
+        "sshPassword": {
+          "id": "YOUR_SSH_CREDENTIAL_ID",
+          "name": "SSH localhost"
+        }
+      }
+    },
+    {
+      "id": "parse",
+      "name": "응답 파싱",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "parameters": {
+        "jsCode": "const stdout = $input.first().json.stdout || '{}';\n\nlet response = '주간 브리핑을 생성할 수 없습니다.';\ntry {\n  const result = JSON.parse(stdout);\n  response = result.response || response;\n} catch (e) {\n  response = '파싱 오류: ' + e.message;\n}\n\nreturn [{ json: { response: response, channel: 'schedule' } }];"
+      }
+    },
+    {
+      "id": "slack",
+      "name": "Slack 전송",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [660, 0],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "schedule"
+        },
+        "text": "={{ $json.response }}"
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "월요일 9시 트리거": {
+      "main": [[{"node": "위클리 브리핑 생성", "type": "main", "index": 0}]]
+    },
+    "위클리 브리핑 생성": {
+      "main": [[{"node": "응답 파싱", "type": "main", "index": 0}]]
+    },
+    "응답 파싱": {
+      "main": [[{"node": "Slack 전송", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Seoul"
+  }
+}
