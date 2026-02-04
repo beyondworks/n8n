@@ -1,6 +1,0 @@
-apify-client==1.6.4
-yt-dlp
-notion-client
-openai
-requests
-google-generativeai

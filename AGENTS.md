@@ -155,3 +155,44 @@ When implementing features:
 - Always reference the Linear ticket in the PR description,
   use `https://linear.app/n8n/issue/[TICKET-ID]`
 - always link to the github issue if mentioned in the linear ticket.
+
+---
+
+## Custom Deployment Guide (Beyondworks)
+
+이 섹션은 n8n 커스텀 배포에 대한 가이드라인이다.
+워크플로우, 스킬, 참조 문서는 [beyondworks/leanskills](https://github.com/beyondworks/leanskills) 레포에서 관리한다.
+
+### 레포 분리 규칙
+
+| 항목 | 레포 | 이유 |
+|------|------|------|
+| n8n 코어 패키지, i18n | **n8n** | 인스턴스 소프트웨어 |
+| Docker 배포 (Dockerfile, compose, scripts) | **n8n** | 인스턴스 배포 설정 |
+| CLAUDE.md, AGENTS.md | **n8n** | 프로젝트 가이드 |
+| 워크플로우 JSON | **leanskills** | `workflows/` |
+| Claude Code 스킬 (Python) | **leanskills** | `skills/` |
+| n8n 노드 참조 문서 | **leanskills** | `n8n-reference/` |
+| 배포 스크립트 (deploy.sh 등) | **leanskills** | `workflows/scripts/` |
+
+### Docker 배포
+
+- **베이스 이미지**: `docker.n8n.io/n8nio/n8n:latest`
+- **시간대**: 항상 `GENERIC_TIMEZONE=Asia/Seoul` + `TZ=Asia/Seoul` 설정
+- **볼륨**: `~/.n8n:/home/node/.n8n` (로컬 데이터 유지)
+- **포트**: 5678 (기본)
+- **터널**: `N8N_TUNNEL_MODE=true` (외부 접속 기본 활성화)
+
+### API 키 관리
+
+- 모든 API 키는 환경 변수로 관리 (하드코딩 금지)
+- Docker: `.env` 파일 사용 (`.env.example`을 복사)
+- Python 스킬: `notion_config.local.json` (로컬 오버라이드, git 미추적)
+- `notion_config.json`에는 API 키를 절대 포함하지 않는다
+
+### 스크립트 작성 규칙
+
+- Bash 스크립트: Mac/Linux용 `.sh` + Windows용 `.bat` 양쪽 제공
+- Python 스크립트: 타입 힌트 사용, `if __name__ == "__main__"` 패턴
+- 모든 스크립트는 `chmod +x`로 실행 권한 부여
+- 한국어 주석 허용 (사용자 대상이 한국어 사용자)

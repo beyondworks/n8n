@@ -45,3 +45,19 @@ packages/cli/THIRD_PARTY_LICENSES.md
 .nyc_output
 packages/cli/src/commands/export/outputs
 *.bak
+
+# Beyondworks custom files (tracked in beyondworks/leanskills)
+.agent/skills/
+.agent/workflows/
+docker/workflows/*.json
+docker/workflows/schedule-assistant/
+docker/workflows/beyondworks-assistant/
+docker/workflows/scripts/
+docker/workflows/*.py
+docker/workflows/*.sh
+.playwright-mcp/
+*-workflow.json
+daily-news-clipping*.json
+marketing-dashboard*.json
+slack-*.json
+notion-reminder*.json
