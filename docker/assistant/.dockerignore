@@ -1,0 +1,6 @@
+__pycache__
+*.pyc
+.venv
+data/sessions
+node_modules
+.git

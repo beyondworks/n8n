@@ -1,5 +1,10 @@
 # n8n (Beyondworks Custom Deployment)
 
+공통 원칙/작업 방식은 로컬 글로벌 규칙인 `~/.claude/CLAUDE.md`를 따른다.
+
+프로젝트 구현/배포 관련 세부 규칙은 `AGENTS.md`를 우선 참고한다.
+장애/교훈 문서는 `claudedocs/2026-02-08-n8n-ssh-mcp-postmortem.md`를 참고한다.
+
 n8n 워크플로우 자동화 플랫폼의 한국어 커스텀 배포 포크. Docker 기반 원클릭 배포를 제공한다.
 
 워크플로우, 스킬, 참조 문서는 [beyondworks/leanskills](https://github.com/beyondworks/leanskills) 레포에서 관리한다.
@@ -83,6 +88,7 @@ cd docker && ./start-with-tunnel.sh  # ngrok 기반 터널
 - **용도**: n8n 워크플로우 CRUD, 실행 관리
 - **주요 도구**: `n8n_list_workflows`, `n8n_get_workflow`, `n8n_create_workflow`, `n8n_update_full_workflow`, `n8n_executions`
 - **인증**: JWT API 키 (settings.local.json에 설정)
+- **주의**: 정규식/백슬래시/따옴표 등 이스케이프에 민감한 n8n 표현식(특히 SSH 노드 커맨드)은 MCP로 수정하지 않는다. (참조: `claudedocs/2026-02-08-n8n-ssh-mcp-postmortem.md`)
 
 ### Notion MCP
 - **용도**: Notion 검색, 블록/페이지 조회
@@ -100,7 +106,7 @@ cd docker && ./start-with-tunnel.sh  # ngrok 기반 터널
 
 ---
 
-## 🚨 실수 기록 (반복 금지)
+## 실수 기록 (반복 금지)
 
 <!--
 형식:
@@ -121,21 +127,21 @@ cd docker && ./start-with-tunnel.sh  # ngrok 기반 터널
 
 ---
 
-## 📝 세션 학습 기록
+## 세션 학습 기록
 
 ### 2025-01 초기 설정 세션
-**✅ 성공 패턴:**
+**성공 패턴:**
 - Docker 기반 원클릭 배포 구성 (start.sh → Docker 체크 → .env 생성 → 컨테이너 시작)
 - n8n 내장 터널로 외부 접속 지원 (N8N_TUNNEL_MODE=true)
 - 한국어 문서화 (README, QUICK_START.md)
 
 ### 2025-02 레포 분리 세션
-**✅ 성공 패턴:**
+**성공 패턴:**
 - n8n 레포 (인스턴스 + Docker 배포) / leanskills 레포 (워크플로우 + 스킬) 분리
 - .gitignore로 커스텀 파일 재추적 방지
 - 심링크로 ~/.claude/skills/에서 leanskills 스킬 접근
 
-**🎯 사용자 스타일:**
+**사용자 스타일:**
 - 한국어 우선 문서화
 - 원클릭 스크립트 선호 (복잡한 설정 최소화)
 - n8n 워크플로우 JSON 기반 관리

@@ -1,0 +1,160 @@
+{
+  "domains": {
+    "schedule": {
+      "name": "일정/업무 관리",
+      "keywords": ["일정", "스케줄", "미팅", "회의", "할일", "업무", "캘린더", "약속", "마감", "deadline", "태스크", "완료", "리마인더", "D-day", "디데이"],
+      "databases": {
+        "tasks": "242003c7-f7be-804a-9d6e-f76d5d0347b4",
+        "parent_task": "242003c7-f7be-806b-a177-e8372eaa64a4",
+        "works": "241003c7-f7be-8011-8ba4-cecf131df2a0",
+        "roles": "241003c7-f7be-80a7-8036-ec710a020205"
+      },
+      "aliases": {
+        "대분류": "parent_task",
+        "업무 대분류": "parent_task",
+        "프로젝트": "parent_task",
+        "Parent Task": "parent_task",
+        "소분류": "tasks",
+        "상세업무": "tasks",
+        "캘린더": "tasks",
+        "일정": "tasks",
+        "스케줄": "tasks",
+        "롤": "works",
+        "웍스": "works",
+        "노트": "works",
+        "롤탭": "works",
+        "롤페이지": "works",
+        "웍스탭": "works",
+        "웍스페이지": "works",
+        "노트탭": "works",
+        "노트페이지": "works"
+      },
+      "schedule_relation_id": "276003c7-f7be-8012-889c-ffb91c786af1"
+    },
+    "content": {
+      "name": "콘텐츠/지식 관리",
+      "keywords": ["콘텐츠", "글", "아티클", "블로그", "인사이트", "뉴스", "트렌드", "스크랩", "북마크", "태그", "AI글", "디자인글", "마케팅글", "팁", "브랜딩", "빌드", "마케팅"],
+      "databases": {
+        "AI": "241003c7-f7be-800f-8f07-f95918c3a072",
+        "Design": "241003c7-f7be-804f-a021-fc24777ca9ad",
+        "Branding": "247003c7-f7be-803a-83f5-fd9494d24d62",
+        "Build": "247003c7-f7be-8074-a583-e1638fd3cfed",
+        "Marketing": "247003c7-f7be-8035-83f4-d39480d66503",
+        "insights": "241003c7-f7be-800b-b71c-df3acddc5bb8",
+        "news": "24d003c7-f7be-80cf-9293-ebcd7656931d",
+        "scrap": "247003c7-f7be-80c0-a9f4-cddbcd337415"
+      },
+      "aliases": {
+        "인사이트": "insights",
+        "인사이트탭": "insights",
+        "인사이트 페이지": "insights",
+        "AI": "AI",
+        "에이아이": "AI",
+        "에이아이탭": "AI",
+        "AI탭": "AI",
+        "AI 페이지": "AI",
+        "디자인": "Design",
+        "디자인탭": "Design",
+        "디자인페이지": "Design",
+        "브랜딩": "Branding",
+        "브랜딩탭": "Branding",
+        "브랜딩페이지": "Branding",
+        "빌드": "Build",
+        "빌드탭": "Build",
+        "빌드페이지": "Build",
+        "마케팅": "Marketing",
+        "마케팅탭": "Marketing",
+        "마케팅페이지": "Marketing",
+        "뉴스": "news",
+        "팁": "news",
+        "뉴스탭": "news",
+        "뉴스페이지": "news",
+        "팁페이지": "news"
+      }
+    },
+    "finance": {
+      "name": "재무 관리",
+      "keywords": ["돈", "지출", "수입", "잔액", "예산", "카드", "계좌", "결제", "월급", "저축", "투자", "금액", "비용", "재무", "가계부", "썼어", "만원", "천원", "냈어", "벌었", "송금", "이체", "토스", "은행", "거래", "라이프"],
+      "databases": {
+        "manager": "28f003c7-f7be-8017-b985-c158537fac5d",
+        "accounts": "28f003c7-f7be-800f-af11-f632dd93fc4d",
+        "categories": "28f003c7-f7be-806a-a218-d62ab30ba54f",
+        "timeline": "28f003c7-f7be-8080-85b4-d73efe3cb896",
+        "monthly": "28f003c7-f7be-80b1-a324-c2fbc9057fc1"
+      },
+      "aliases": {
+        "라이프 탭": "manager",
+        "라이프 페이지": "manager",
+        "라이프": "manager",
+        "가계부": "timeline",
+        "지출": "timeline",
+        "수입": "timeline"
+      }
+    },
+    "travel": {
+      "name": "여행 관리",
+      "keywords": ["여행", "항공", "호텔", "숙소", "예약", "준비물", "짐", "비행기", "관광", "일정표", "패킹", "여권", "트립"],
+      "databases": {
+        "trips": "2af003c7-f7be-8042-a47d-ed546fa1da42",
+        "itinerary": "2af003c7-f7be-81db-a8a9-c18bfffd4bb9",
+        "reservations": "2af003c7-f7be-81b3-9989-e6b19107d8c8",
+        "packing": "2af003c7-f7be-8142-b9c7-f8c25c4c092f"
+      },
+      "aliases": {
+        "여행": "trips",
+        "트립": "trips",
+        "여행 탭": "trips",
+        "여행 페이지": "trips"
+      }
+    },
+    "tools": {
+      "name": "도구/리소스 관리",
+      "keywords": ["도구탭", "도구페이지", "툴탭", "툴페이지", "구독탭", "구독페이지", "구독 서비스", "API키", "결제일", "소프트웨어", "SaaS", "AI툴", "에이아이툴", "디자인툴", "디자인 레퍼런스"],
+      "databases": {
+        "work_tool": "241003c7-f7be-8113-a6c3-fe98b39bf8a9",
+        "tool_ai": "241003c7-f7be-813f-b036-f7d394b717a8",
+        "tool_design": "241003c7-f7be-811b-aec5-d6d8df871cf4",
+        "tool_build": "241003c7-f7be-8194-bed8-ee00529e3e17",
+        "tool_marketing": "241003c7-f7be-8123-b153-ca1cb5d1b12a",
+        "tool_source": "241003c7-f7be-818d-9dfb-d01a63172e1e",
+        "tool_account": "241003c7-f7be-81ef-aa66-c5108829dfc7",
+        "api_archive": "270003c7-f7be-80f5-a586-c9c2ac75769d",
+        "subscribe": "241003c7-f7be-8087-b512-f62e588cb576"
+      },
+      "aliases": {
+        "툴": "work_tool",
+        "툴탭": "work_tool",
+        "툴페이지": "work_tool",
+        "도구": "work_tool",
+        "도구탭": "work_tool",
+        "도구페이지": "work_tool",
+        "AI툴": "tool_ai",
+        "에이아이툴": "tool_ai",
+        "AI툴 탭": "tool_ai",
+        "AI툴 페이지": "tool_ai",
+        "디자인툴": "tool_design",
+        "디자인툴탭": "tool_design",
+        "디자인툴페이지": "tool_design",
+        "디자인 레퍼런스": "tool_design",
+        "구독": "subscribe",
+        "구독탭": "subscribe",
+        "구독페이지": "subscribe"
+      }
+    },
+    "workspace": {
+      "name": "범용 Notion 비서 (DB 검색/생성/수정)",
+      "keywords": ["웍스", "웍스탭", "웍스페이지", "노트", "노트탭", "노트페이지", "롤", "롤탭", "롤페이지", "대분류", "프로젝트", "소분류", "상세업무", "등록해줘", "기입해줘", "본문에", "뉴스탭", "뉴스페이지", "저장해줘", "추가해줘", "작성해줘", "브리핑", "요약", "인사이트탭", "AI탭", "에이아이탭", "디자인탭", "브랜딩탭", "빌드탭", "마케팅탭"],
+      "databases": {}
+    },
+    "business": {
+      "name": "비즈니스 허브",
+      "keywords": ["메모", "역량", "평가", "템플릿", "워크스페이스", "비즈니스"],
+      "databases": {
+        "main": "241003c7-f7be-8042-861a-ea3c314f13d9",
+        "competency": "277003c7-f7be-8055-aae4-f34d22b4c80f",
+        "memo_archive": "26a003c7-f7be-8063-b812-ed4f98f582a8",
+        "templates": "25a003c7-f7be-8098-bdde-c6fbd1552510"
+      }
+    }
+  }
+}

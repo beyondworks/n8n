@@ -1,0 +1,12 @@
+# Caddy 리버스 프록시 설정
+# {$DOMAIN}을 실제 도메인 또는 Oracle Public IP로 변경
+#
+# 도메인이 있는 경우 (자동 HTTPS):
+#   yourdomain.com {
+#     reverse_proxy n8n:5678
+#   }
+#
+# Public IP만 사용 (HTTP, HTTPS 없음):
+:80 {
+    reverse_proxy n8n:5678
+}

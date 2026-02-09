@@ -1,12 +1,14 @@
-# n8n + Python Assistant + Cloudflare Tunnel
-# 사용법: docker compose up -d
+# Oracle Cloud Free Tier 배포용 Docker Compose
+# n8n + Python Assistant를 하나의 compose로 실행
+#
+# 사용법:
+#   cp .env.example .env  # API 키 설정
+#   docker compose -f docker-compose.oracle.yml up -d
 
 services:
   # n8n 워크플로우 자동화 서버
   n8n:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: docker.n8n.io/n8nio/n8n:latest
     container_name: n8n
     restart: unless-stopped
     ports:
@@ -14,53 +16,36 @@ services:
     env_file:
       - .env
     environment:
-      # 시간대 설정 (한국)
       - GENERIC_TIMEZONE=Asia/Seoul
       - TZ=Asia/Seoul
-
-      # n8n 기본 설정
       - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
-      - N8N_EDITOR_BASE_URL=${WEBHOOK_URL:-}
-      - N8N_PROXY_HOPS=1
-
-      # Webhook URL (Cloudflare Tunnel 도메인으로 설정)
+      # Oracle VM에서는 터널 대신 Caddy 리버스 프록시 사용
+      - N8N_TUNNEL_MODE=false
+      # WEBHOOK_URL은 .env에서 설정 (예: https://yourdomain.com)
       - WEBHOOK_URL=${WEBHOOK_URL:-}
-
-      # 워크플로우 설정
+      # 실행 데이터 저장
       - EXECUTIONS_DATA_SAVE_ON_ERROR=all
       - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
       - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
-
-      # Execute Command 노드 활성화
+      # Code 노드 설정
       - NODE_FUNCTION_ALLOW_BUILTIN=*
       - NODE_FUNCTION_ALLOW_EXTERNAL=*
-
-      # API 키 (.env 파일에서 로드)
+      # API 키 (.env에서 로드)
       - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - NOTION_API_KEY=${NOTION_API_KEY:-}
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN:-}
-
-      # Notion MCP Server 설정
       - MCP_AUTH_TOKEN=${MCP_AUTH_TOKEN:-}
-
-      # Slack 보안 (허가된 사용자 ID)
       - ALLOWED_SLACK_USERS=${ALLOWED_SLACK_USERS:-}
-
     volumes:
-      # 기존 로컬 n8n 데이터 연결 (워크플로우, 인증정보 등)
-      - ~/.n8n:/home/node/.n8n
-      # 워크플로우 파일 마운트 (선택사항)
-      - ./workflows:/home/node/workflows:ro
-
+      - n8n_data:/home/node/.n8n
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:5678/healthz']
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
-
     depends_on:
       assistant:
         condition: service_healthy
@@ -68,19 +53,22 @@ services:
   # Python AI Assistant 서버
   assistant:
     build:
-      context: ./assistant
+      context: ../../.claude/skills/beyondworks-assistant
       dockerfile: Dockerfile
     container_name: assistant
     restart: unless-stopped
     environment:
       - TZ=Asia/Seoul
       - PORT=8080
+      # API 키 (n8n과 동일한 .env 파일에서 로드)
       - NOTION_API_KEY=${NOTION_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - AI_PROVIDER=${AI_PROVIDER:-openai}
       - AI_MODEL=${AI_MODEL:-gpt-4o-mini}
+      - AI_FALLBACK_PROVIDER=${AI_FALLBACK_PROVIDER:-}
+      - AI_FALLBACK_MODEL=${AI_FALLBACK_MODEL:-gpt-4o-mini}
     volumes:
       - assistant_data:/app/data
     healthcheck:
@@ -90,16 +78,23 @@ services:
       retries: 3
       start_period: 10s
 
-  # Cloudflare Tunnel (고정 URL + 자동 HTTPS)
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: cloudflared
+  # Caddy 리버스 프록시 (자동 HTTPS)
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
     restart: unless-stopped
-    command: tunnel --no-autoupdate run n8n-tunnel
+    ports:
+      - '80:80'
+      - '443:443'
     volumes:
-      - ~/.cloudflared:/etc/cloudflared:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
       - n8n
 
 volumes:
+  n8n_data:
   assistant_data:
+  caddy_data:
+  caddy_config:

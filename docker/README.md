@@ -295,7 +295,60 @@ N8N_BASIC_AUTH_PASSWORD=your_secure_password
 
 ---
 
-## 7. 자주 쓰는 명령어
+## 7. Universal Assistant (만능 비서)
+
+Slack에서 자연어로 명령하면 AI가 Notion을 자유롭게 관리하는 만능 비서입니다.
+
+### 아키텍처
+```
+Slack 메시지 → n8n Webhook → AI Agent (GPT-4o) → Notion MCP Server → Notion
+                                                                      ↓
+Slack 응답   ← n8n Slack 노드 ←────────────────────────────────── 결과 반환
+```
+
+### 설정 방법
+
+**1. `.env` 파일에 추가 설정:**
+```bash
+# Notion API 키 (필수)
+NOTION_API_KEY=secret_xxxxx
+
+# OpenAI API 키 (필수)
+OPENAI_API_KEY=sk-xxxxx
+
+# Slack Bot Token (필수)
+SLACK_BOT_TOKEN=xoxb-xxxxx
+
+# MCP 서버 인증 토큰 (임의 문자열로 변경)
+MCP_AUTH_TOKEN=change_this_to_random_token
+
+# 허가된 Slack 사용자 ID (쉼표 구분)
+ALLOWED_SLACK_USERS=U12345678,U87654321
+```
+
+**2. 컨테이너 빌드 및 시작:**
+```bash
+docker-compose up -d --build
+```
+
+**3. n8n에서 워크플로우 임포트:**
+- `slack-universal-assistant.json` 파일을 n8n에 임포트
+- Credential 설정: OpenAI API, Slack API, HTTP Bearer Auth (MCP_AUTH_TOKEN 값)
+
+**4. Slack App 설정:**
+- Event Subscriptions URL을 n8n 웹훅 URL로 설정
+- 필요한 Bot Scopes: `chat:write`, `app_mentions:read`, `channels:history`
+
+### 사용 예시
+| 명령 | AI 동작 |
+|------|---------|
+| "내 일정 보여줘" | Notion 일정 DB 검색 → 목록 반환 |
+| "내일 오후 2시 회의 추가" | Notion 페이지 생성 → 확인 |
+| "지난주 회의록 요약해서 할 일로 만들어줘" | 회의록 검색 → 요약 → 태스크 생성 |
+
+---
+
+## 8. 자주 쓰는 명령어
 
 | 명령어 | 설명 |
 |--------|------|
@@ -304,7 +357,7 @@ N8N_BASIC_AUTH_PASSWORD=your_secure_password
 | `docker-compose restart` | n8n 재시작 |
 | `docker-compose logs -f` | 실시간 로그 보기 |
 | `docker-compose logs -f --tail 100` | 최근 100줄 로그 |
-| `docker-compose pull && docker-compose up -d` | 최신 버전 업데이트 |
+| `docker-compose up -d --build` | 이미지 재빌드 후 시작 |
 
 ---
 
@@ -577,7 +630,7 @@ If you see red warnings:
 | `docker-compose down` | Stop n8n |
 | `docker-compose restart` | Restart n8n |
 | `docker-compose logs -f` | View live logs |
-| `docker-compose pull && docker-compose up -d` | Update to latest |
+| `docker-compose up -d --build` | Rebuild and start |
 
 ---
 
