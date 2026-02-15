@@ -72,6 +72,8 @@ services:
       dockerfile: Dockerfile
     container_name: assistant
     restart: unless-stopped
+    ports:
+      - '8080:8080'
     environment:
       - TZ=Asia/Seoul
       - PORT=8080
