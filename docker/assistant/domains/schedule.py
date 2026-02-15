@@ -115,6 +115,11 @@ AI (잘못된 응답): "이미 AI 정보 일정이 추가되어 있습니다."
 - "~가능해?", "~있어?", "~알려줘" → search_schedule, query_schedule_by_range로 조회만
 - "~해줘", "~추가해", "~잡아줘", "~만들어줘" → 반드시 add_schedule, update_schedule 등 실행 도구 호출
 
+## 일정 조회 시 완료 항목 포함 규칙
+- "오늘 일정" 질문에는 완료된 일정(Completed: True)도 **반드시 포함**하여 응답
+- 완료된 일정은 "(완료)" 표시를 붙여서 안내
+- 컨텍스트의 [오늘 요약]에 이미 완료/미완료가 구분되어 있으므로 그대로 전달
+
 ## 중요: 시간대 (Timezone)
 - 모든 시간은 한국 시간(KST, UTC+9) 기준입니다.
 - 컨텍스트에 표시된 current_time은 KST입니다.
@@ -173,13 +178,26 @@ TOOLS = [
 ]
 
 
+def _to_kst_range(date_str):
+    """날짜 문자열을 KST 하루 범위(00:00~23:59)로 변환.
+    Notion API는 UTC 기준 필터링이므로, KST 시간대를 명시해야
+    오전 9시 이전 일정(UTC 기준 전날)이 누락되지 않음."""
+    return f"{date_str}T00:00:00+09:00", f"{date_str}T23:59:59+09:00"
+
+
 def _query_by_date(date_str):
+    start, end = _to_kst_range(date_str)
     return query_database(_db("tasks"),
-        filter_obj={"property": "Date", "date": {"equals": date_str}},
+        filter_obj={"and": [
+            {"property": "Date", "date": {"on_or_after": start}},
+            {"property": "Date", "date": {"on_or_before": end}}
+        ]},
         sorts=[{"property": "Date", "direction": "ascending"}])
 
 
-def _query_by_range(start, end):
+def _query_by_range(start_date, end_date):
+    start = f"{start_date}T00:00:00+09:00"
+    end = f"{end_date}T23:59:59+09:00"
     return query_database(_db("tasks"),
         filter_obj={"and": [
             {"property": "Date", "date": {"on_or_after": start}},
@@ -209,13 +227,22 @@ def _get_context():
     now = datetime.now()
     yesterday = now - timedelta(days=1)
     tomorrow = now + timedelta(days=1)
+    week_start = now - timedelta(days=now.weekday())
     week_end = now + timedelta(days=(6 - now.weekday()))
     next_week_start = week_end + timedelta(days=1)
     next_week_end = next_week_start + timedelta(days=6)
+    last_week_start = week_start - timedelta(days=7)
+    last_week_end = week_start - timedelta(days=1)
+
+    # 요일별 날짜 매핑 (AI가 계산 안 하도록 명시)
+    day_names = ['월', '화', '수', '목', '금', '토', '일']
+    this_week_days = {f"{day_names[i]}요일": (week_start + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)}
+    next_week_days = {f"{day_names[i]}요일": (next_week_start + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)}
 
     return {
         "current_time": now.strftime('%Y-%m-%d %H:%M'),
-        "weekday": ['월','화','수','목','금','토','일'][now.weekday()],
+        "weekday": day_names[now.weekday()],
+        "last_week": _results_to_list(_query_by_range(last_week_start.strftime('%Y-%m-%d'), last_week_end.strftime('%Y-%m-%d'))),
         "yesterday": _results_to_list(_query_by_date(yesterday.strftime('%Y-%m-%d'))),
         "today": _results_to_list(_query_by_date(now.strftime('%Y-%m-%d'))),
         "tomorrow": _results_to_list(_query_by_date(tomorrow.strftime('%Y-%m-%d'))),
@@ -223,10 +250,15 @@ def _get_context():
         "next_week": _results_to_list(_query_by_range(next_week_start.strftime('%Y-%m-%d'), next_week_end.strftime('%Y-%m-%d'))),
         "incomplete": _results_to_list(_query_incomplete()),
         "dates": {
+            "last_week": f"{last_week_start.strftime('%Y-%m-%d')}~{last_week_end.strftime('%Y-%m-%d')}",
             "yesterday": yesterday.strftime('%Y-%m-%d'),
             "today": now.strftime('%Y-%m-%d'),
             "tomorrow": tomorrow.strftime('%Y-%m-%d'),
-        }
+            "this_week": f"{week_start.strftime('%Y-%m-%d')}~{week_end.strftime('%Y-%m-%d')}",
+            "next_week": f"{next_week_start.strftime('%Y-%m-%d')}~{next_week_end.strftime('%Y-%m-%d')}",
+        },
+        "this_week_days": this_week_days,
+        "next_week_days": next_week_days,
     }
 
 
@@ -323,50 +355,88 @@ def _exec_tool(name, args):
 
 
 def _briefing(ctx, mode):
-    if mode == "daily_briefing":
-        prompt = "매일 아침 브리핑: 어제 완료, 오늘 할 일, 미완료 항목 정리. 이모지 사용. 한국어."
-        content = f"오늘: {ctx['dates']['today']}\n어제 일정: {json.dumps(ctx['yesterday'], ensure_ascii=False)}\n오늘 일정: {json.dumps(ctx['today'], ensure_ascii=False)}\n미완료: {json.dumps(ctx['incomplete'][:5], ensure_ascii=False)}"
+    today_done = [s for s in ctx['today'] if s.get('Completed')]
+    today_pending = [s for s in ctx['today'] if not s.get('Completed')]
+    yesterday_pending = [s for s in ctx['yesterday'] if not s.get('Completed')]
+
+    if mode == "morning_briefing":
+        prompt = (
+            "오전 브리핑을 작성하세요. 플레인 텍스트, 이모지 사용, 한국어.\n"
+            "구성: 1) 인사 2) 어제 놓친 일(미완료) 리마인드 3) 오늘 할 일 목록 4) 응원 한마디"
+        )
+        content = (
+            f"오늘: {ctx['dates']['today']} ({ctx['weekday']}요일)\n"
+            f"어제 미완료 ({len(yesterday_pending)}건): {json.dumps(yesterday_pending[:5], ensure_ascii=False)}\n"
+            f"오늘 할 일 ({len(today_pending)}건): {json.dumps(today_pending[:10], ensure_ascii=False)}\n"
+            f"전체 미완료 ({len(ctx['incomplete'])}건): {json.dumps(ctx['incomplete'][:5], ensure_ascii=False)}"
+        )
+    elif mode == "evening_briefing":
+        prompt = (
+            "오후 브리핑을 작성하세요. 플레인 텍스트, 이모지 사용, 한국어.\n"
+            "구성: 1) 오늘 완료한 일 회고 + 칭찬 2) 아직 미완료인 일 3) 내일 일정 미리보기 4) 마무리 인사"
+        )
+        content = (
+            f"오늘: {ctx['dates']['today']} ({ctx['weekday']}요일)\n"
+            f"오늘 완료 ({len(today_done)}건): {json.dumps(today_done[:10], ensure_ascii=False)}\n"
+            f"오늘 미완료 ({len(today_pending)}건): {json.dumps(today_pending[:10], ensure_ascii=False)}\n"
+            f"내일 일정: {json.dumps(ctx['tomorrow'][:10], ensure_ascii=False)}"
+        )
+    elif mode == "daily_briefing":
+        # 레거시 호환: morning_briefing과 동일하게 동작
+        prompt = (
+            "오전 브리핑을 작성하세요. 플레인 텍스트, 이모지 사용, 한국어.\n"
+            "구성: 1) 인사 2) 어제 놓친 일(미완료) 리마인드 3) 오늘 할 일 목록 4) 응원 한마디"
+        )
+        content = (
+            f"오늘: {ctx['dates']['today']} ({ctx['weekday']}요일)\n"
+            f"어제 미완료 ({len(yesterday_pending)}건): {json.dumps(yesterday_pending[:5], ensure_ascii=False)}\n"
+            f"오늘 할 일 ({len(today_pending)}건): {json.dumps(today_pending[:10], ensure_ascii=False)}\n"
+            f"전체 미완료 ({len(ctx['incomplete'])}건): {json.dumps(ctx['incomplete'][:5], ensure_ascii=False)}"
+        )
     elif mode == "weekly_briefing":
         prompt = "주간 브리핑: 이번 주 일정 요약, 미완료 항목, 주의사항. 이모지 사용. 한국어."
         content = f"이번 주: {json.dumps(ctx['this_week'], ensure_ascii=False)}\n다음 주: {json.dumps(ctx['next_week'], ensure_ascii=False)}\n미완료: {json.dumps(ctx['incomplete'][:10], ensure_ascii=False)}"
     else:
         return None
-    return chat_completion([{"role": "system", "content": prompt}, {"role": "user", "content": content}], max_tokens=800, temperature=0.5)
+    return chat_completion([{"role": "system", "content": prompt + PLAIN_TEXT_RULE}, {"role": "user", "content": content}], max_tokens=800, temperature=0.5)
 
 
 def _reminder(ctx):
     now = datetime.now()
     reminders = []
+    # (목표 분, 허용 오차 ±분, 라벨)
+    thresholds = [
+        (180, 1, "3시간"),
+        (60, 1, "1시간"),
+        (30, 1, "30분"),
+        (10, 1, "10분"),
+    ]
     for s in ctx["today"]:
         if s.get("Completed"):
             continue
         date_val = s.get("Date", "")
         if isinstance(date_val, dict):
             date_val = date_val.get("start", "")
-        if "T" in str(date_val):
-            try:
-                tp = str(date_val).split("T")[1][:5]
-                h, m = map(int, tp.split(":"))
-                event_time = now.replace(hour=h, minute=m, second=0, microsecond=0)
-                diff = (event_time - now).total_seconds() / 60
-                rtype = None
-                if 55 <= diff <= 65:
-                    rtype = "1시간"
-                elif 25 <= diff <= 35:
-                    rtype = "30분"
-                elif 5 <= diff <= 15:
-                    rtype = "10분"
-                if rtype:
-                    reminders.append(f"{rtype} 전: {s.get('Entry name','')} ({tp})")
-            except Exception:
-                pass
+        if "T" not in str(date_val):
+            continue
+        try:
+            tp = str(date_val).split("T")[1][:5]
+            h, m = map(int, tp.split(":"))
+            event_time = now.replace(hour=h, minute=m, second=0, microsecond=0)
+            diff = (event_time - now).total_seconds() / 60
+            for target, tolerance, label in thresholds:
+                if target - tolerance <= diff <= target + tolerance:
+                    reminders.append(f"{label} 전: {s.get('Entry name','')} ({tp})")
+                    break
+        except Exception:
+            pass
     return "\n".join(reminders) if reminders else None
 
 
 def handle(message, mode="chat", session=None, image_urls=None):
     ctx = _get_context()
 
-    if mode in ("daily_briefing", "weekly_briefing"):
+    if mode in ("daily_briefing", "morning_briefing", "evening_briefing", "weekly_briefing"):
         resp = _briefing(ctx, mode)
         return {"response": resp, "domain": DOMAIN}
 
@@ -377,14 +447,53 @@ def handle(message, mode="chat", session=None, image_urls=None):
     if not message:
         return {"error": "메시지가 필요합니다", "domain": DOMAIN}
 
-    context = f"""## 현재 {ctx['current_time']} KST ({ctx['weekday']}요일) — 모든 시간은 한국 시간(KST) 기준
-## 날짜: 어제={ctx['dates']['yesterday']} 오늘={ctx['dates']['today']} 내일={ctx['dates']['tomorrow']}
-## 오늘 일정
-{json.dumps(ctx['today'][:10], ensure_ascii=False, indent=1)}
-## 내일 일정
+    # 요일-날짜 매핑 문자열 생성
+    tw = ctx['this_week_days']
+    nw = ctx['next_week_days']
+    tw_map = ", ".join(f"{k}={v}" for k, v in tw.items())
+    nw_map = ", ".join(f"{k}={v}" for k, v in nw.items())
+
+    # 오늘 일정을 완료/미완료로 사전 분류 (AI가 완료 항목을 무시 못하게 코드 방어)
+    today_done = [s for s in ctx['today'] if s.get('Completed')]
+    today_pending = [s for s in ctx['today'] if not s.get('Completed')]
+    today_summary = f"총 {len(ctx['today'])}건 (미완료 {len(today_pending)}건, 완료 {len(today_done)}건)"
+
+    # 각 시간대별 방어 헤더 생성 (AI가 다른 섹션의 항목을 혼동하지 못하게)
+    def _section_summary(items, max_names=5):
+        n = len(items)
+        if n == 0:
+            return "0건"
+        names = ", ".join(s.get('Entry name', '?') for s in items[:max_names])
+        suffix = f" 외 {n - max_names}건" if n > max_names else ""
+        return f"{n}건: {names}{suffix}"
+
+    yesterday_summary = _section_summary(ctx['yesterday'])
+    tomorrow_summary = _section_summary(ctx['tomorrow'])
+    last_week_summary = f"{len(ctx['last_week'])}건"
+    this_week_summary = f"{len(ctx['this_week'])}건"
+    next_week_summary = f"{len(ctx['next_week'])}건"
+
+    context = f"""## 현재 {ctx['current_time']} KST ({ctx['weekday']}요일) — 모든 시간은 한국 시간(KST), 2026년 기준
+## 날짜 참조: 지난주={ctx['dates']['last_week']} 어제={ctx['dates']['yesterday']} 오늘={ctx['dates']['today']} 내일={ctx['dates']['tomorrow']} 이번주={ctx['dates']['this_week']} 다음주={ctx['dates']['next_week']}
+## 이번 주 요일→날짜: {tw_map}
+## 다음 주 요일→날짜: {nw_map}
+## CRITICAL: "이번 주 일요일"은 위 매핑표에서 이번 주 일요일 날짜를 그대로 사용. 절대 직접 계산하지 마세요.
+## CRITICAL: 각 섹션의 일정 데이터만 해당 기간의 일정입니다. 다른 섹션의 항목을 섞어서 답하지 마세요.
+## 지난주 일정 [{last_week_summary}]
+{json.dumps(ctx['last_week'][:15], ensure_ascii=False, indent=1)}
+## 어제 일정 [{yesterday_summary}] — 이 리스트에 없는 항목을 어제 일정이라고 말하지 마세요
+{json.dumps(ctx['yesterday'][:10], ensure_ascii=False, indent=1)}
+## 오늘 일정 [{today_summary}] — 완료 항목도 반드시 사용자에게 안내할 것
+### 미완료 ({len(today_pending)}건)
+{json.dumps(today_pending[:10], ensure_ascii=False, indent=1)}
+### 완료 ({len(today_done)}건)
+{json.dumps(today_done[:10], ensure_ascii=False, indent=1)}
+## 내일 일정 [{tomorrow_summary}]
 {json.dumps(ctx['tomorrow'][:10], ensure_ascii=False, indent=1)}
-## 이번 주 남은 일정
+## 이번 주 남은 일정 [{this_week_summary}]
 {json.dumps(ctx['this_week'][:15], ensure_ascii=False, indent=1)}
+## 다음 주 일정 [{next_week_summary}]
+{json.dumps(ctx['next_week'][:15], ensure_ascii=False, indent=1)}
 ## 미완료
 {json.dumps(ctx['incomplete'][:10], ensure_ascii=False, indent=1)}"""
 

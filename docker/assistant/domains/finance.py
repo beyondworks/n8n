@@ -303,24 +303,26 @@ def _exec_tool(name, args):
             cat_id = _find_category_id(args["category"])
             if cat_id:
                 props["Category"] = {"relation": [{"id": cat_id}]}
-        if args.get("type"):
-            props["Type"] = {"select": {"name": args["type"]}}
+        # Type: 코드 레벨 기본값 강제 (AI가 누락해도 "지출"로 설정)
+        type_val = args.get("type") or "지출"
+        props["Type"] = {"select": {"name": type_val}}
         # When: 월 + 해당 연도 전체 항상 포함
         when_rels = []
-        if args.get("when"):
-            when_id = _find_when_id(args["when"])
-            if when_id:
-                when_rels.append({"id": when_id})
+        when_name = args.get("when") or f"{datetime.now().year}년 {datetime.now().month:02d}월"
+        when_id = _find_when_id(when_name)
+        if when_id:
+            when_rels.append({"id": when_id})
         yearly_name = f"{datetime.now().year}년 전체"
         yearly_id = _find_when_id(yearly_name)
         if yearly_id and not any(r["id"] == yearly_id for r in when_rels):
             when_rels.append({"id": yearly_id})
         if when_rels:
             props["When"] = {"relation": when_rels}
-        if args.get("account"):
-            acc_id = _find_account_id(args["account"])
-            if acc_id:
-                props["Account"] = {"relation": [{"id": acc_id}]}
+        # Account: 코드 레벨 기본값 강제 (AI가 누락해도 "토스뱅크"로 설정)
+        acc_name = args.get("account") or "토스뱅크"
+        acc_id = _find_account_id(acc_name)
+        if acc_id:
+            props["Account"] = {"relation": [{"id": acc_id}]}
         if args.get("memo"):
             props["Memo"] = {"rich_text": [{"text": {"content": args["memo"]}}]}
 

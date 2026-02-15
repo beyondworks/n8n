@@ -119,13 +119,14 @@ def invoke_assistant(params):
                 ttl_minutes=session_ttl, session_scope=session_scope,
             )
 
-    # Update session
+    # Update session (에러/실패 응답은 세션에 저장하지 않아 오염 방지)
     if session is not None and mode == "chat" and message:
         resp_text = result.get("response", "")
-        update_session(
-            user_id, channel_id, domain, message, resp_text,
-            ttl_minutes=session_ttl, session_scope=session_scope,
-        )
+        if not resp_text.startswith("⚠️"):
+            update_session(
+                user_id, channel_id, domain, message, resp_text,
+                ttl_minutes=session_ttl, session_scope=session_scope,
+            )
 
     # Annotate learning events
     learning_events = result.get("learning_events")

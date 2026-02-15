@@ -418,7 +418,7 @@ def chat_with_tools_multi(system_prompt, messages, tools, tool_executor,
             # 도구 호출 없이 응답 → 할루시네이션 검사
             # 단, 이전 턴에서 도구를 실행했으면 정상 완료 응답이므로 skip
             response_text = result.get("content", "")
-            if not executed_tool_calls and _has_action_claim_without_tool_call(response_text, tool_calls):
+            if force_tool_call and not executed_tool_calls and _has_action_claim_without_tool_call(response_text, tool_calls):
                 # 할루시네이션 감지: "완료했습니다"라고 하지만 어떤 턴에서도 도구 호출이 없음
                 return {
                     "response": "⚠️ 요청을 처리하려고 했지만 실행에 실패했습니다. 구체적으로 다시 요청해주세요.\n(예: '내일 오후 2시 회의 추가해줘')",
